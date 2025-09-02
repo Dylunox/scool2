@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>جدول المراجعة</title>
+  <meta name="theme-color" content="#0d6efd" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet" />
+  
+  <style>
+    /* خطوط وأساسيات */
+    :root { --brand: #0d6efd; --success: #198754; --danger: #dc3545; }
+    body { font-family: Tajawal, sans-serif; background-color: #f8fafc; color: #0f172a; }
+
+    /* حاويات محسّنة */
+    .container { max-width: 980px; }
+    header { background: #ffffff; border: 1px solid #e2e8f0; border-radius: .75rem; padding: .75rem 1rem; }
+
+    /* بطاقات الهاتف للجدول */
+    .card-task { border: 1px solid #e2e8f0; border-radius: .75rem; padding: .85rem; background: #fff; transition: transform .2s ease, box-shadow .2s ease; }
+    .card-task:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(15, 23, 42, .08); }
+    .card-task .title { font-weight: 700; color: #0f172a; }
+    .card-task.late { border-color: var(--danger); background: #fff5f5; }
+    .card-task.completed { border-color: var(--success); background: #f3fff6; }
+    .card-task.completed-anim { animation: pulseComplete .6s ease; }
+    @keyframes pulseComplete { 0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, .5); } 100% { box-shadow: 0 0 0 12px rgba(25, 135, 84, 0); } }
+
+    /* تأثير انفجار بسيط عند الإكمال */
+    .card-task.explode::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: .75rem;
+      box-shadow: 0 0 0 0 rgba(25, 135, 84, .45);
+      animation: explode 400ms ease-out forwards;
+      pointer-events: none;
+    }
+    @keyframes explode {
+      0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(25,135,84,.45); }
+      100% { transform: scale(1.04); opacity: 0; box-shadow: 0 0 0 18px rgba(25,135,84,0); }
+    }
+
+    /* زر نجاح ناعم */
+    .btn-success-soft { background: #e7f7ee; color: var(--success); border-color: #d3f0e0; }
+    .btn-success-soft:hover { background: #dff4e9; }
+
+    /* قائمة المواد وإدارتها */
+    .list-group-item { border-color: #e2e8f0; }
+    .list-group-item input.subject-name { border-radius: .5rem; }
+
+    /* أزرار ناعمة */
+    .btn-danger-soft { background: #ffe3e6; color: var(--danger); border-color: #f8d7da; }
+    .btn-danger-soft:hover { background: #ffd6db; }
+
+    /* حقول صغيرة أنيقة */
+    .form-control, .form-select { border-color: #cbd5e1; }
+    .form-control:focus, .form-select:focus { box-shadow: 0 0 0 .15rem rgba(13,110,253,.15); }
+
+    /* طباعة جميلة */
+    @media print {
+      header, .btn, .nav, .modal { display: none !important; }
+      body { color: #000; background: #fff; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border: 1px solid #000; padding: 6px; }
+    }
+  </style>
+</head>
+<body class="bg-white" style="font-family:Tajawal,sans-serif">
+  <div class="container py-3">
+    <header class="d-flex justify-content-center align-items-center mb-3">
+      <h1 class="h4 mb-0">جدول المراجعة</h1>
+    </header>
+
+    <section class="mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h5 mb-0" id="scheduleDate">اليوم</h2>
+        <div class="d-flex gap-2">
+          <button class="btn btn-success btn-sm d-none" id="refreshDataBtn" aria-hidden="true">تحديث البيانات</button>
+          <button class="btn btn-outline-primary btn-sm" id="copyScheduleBtn">نسخ الجدول</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">طباعة</button>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-12 col-lg-6">
+          <div class="border rounded p-2">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h3 class="h6 mb-0">مهام اليوم - غير مكتملة</h3>
+              <span class="badge bg-danger" id="pendingCount">0</span>
+            </div>
+            <div id="dailyPending" class="vstack gap-2"></div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-6">
+          <div class="border rounded p-2">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h3 class="h6 mb-0">مهام اليوم - مكتملة</h3>
+              <span class="badge bg-success" id="completedCount">0</span>
+            </div>
+            <div id="dailyCompleted" class="vstack gap-2"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-4">
+      <div class="border rounded p-2">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h3 class="h6 mb-0">اختبارات/واجبات قريبة</h3>
+          <div class="d-flex align-items-center gap-2">
+            <span class="text-muted small" id="todayName"></span>
+          </div>
+        </div>
+        <div id="upcomingExams" class="vstack gap-2"></div>
+      </div>
+    </section>
+
+    <section class="mt-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h5 mb-0">سجل الإنجازات</h2>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary btn-sm" id="copyAchievementsBtn">نسخ السجل</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">طباعة</button>
+        </div>
+      </div>
+
+      <ul class="nav nav-tabs" id="achTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#achDaily" type="button" role="tab">يومي</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#achWeekly" type="button" role="tab">أسبوعي</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#achMonthly" type="button" role="tab">شهري</button>
+        </li>
+      </ul>
+      <div class="tab-content border border-top-0 p-3">
+        <div class="tab-pane fade show active" id="achDaily" role="tabpanel">
+          <div id="achDailyContainer" class="vstack gap-2"></div>
+        </div>
+        <div class="tab-pane fade" id="achWeekly" role="tabpanel">
+          <div id="achWeeklyContainer" class="vstack gap-2"></div>
+        </div>
+        <div class="tab-pane fade" id="achMonthly" role="tabpanel">
+          <div id="achMonthlyContainer" class="vstack gap-2"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script type="module">
+    // Firebase initialization (v12.2.1)
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
+    import { getDatabase } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js';
+    import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+    import { ref, get, set, push, update, remove, child } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCkfdSNkWjzVy77FZoUpg6JvTgNt29Pbac",
+      authDomain: "scool-49436.firebaseapp.com",
+      databaseURL: "https://scool-49436-default-rtdb.firebaseio.com",
+      projectId: "scool-49436",
+      storageBucket: "scool-49436.firebasestorage.app",
+      messagingSenderId: "64670832141",
+      appId: "1:64670832141:web:ac1141ad3fc627c11ba744",
+      measurementId: "G-K6EPZHKMEH"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+    
+    const userReady = (async () => {
+      try {
+        if (!auth.currentUser) await signInAnonymously(auth);
+        return auth.currentUser;
+      } catch (e) {
+        console.warn('Auth failed:', e);
+        return null;
+      }
+    })();
+
+    async function getUserId() {
+      const u = await userReady;
+      return u?.uid || 'local-user';
+    }
+
+    // Database functions
+    async function listSubjects() {
+      const id = await getUserId();
+      const snap = await get(ref(db, `users/${id}/subjects`));
+      if (!snap.exists()) return [];
+      const obj = snap.val() || {};
+      return Object.entries(obj).map(([id, data]) => ({ id, ...(data || {}) }));
+    }
+
+    async function getDailyEntry(dateId) {
+      const uidVal = await getUserId();
+      const snap = await get(ref(db, `users/${uidVal}/entries/${dateId}`));
+      return snap.exists() ? snap.val() : null;
+    }
+
+    async function listScheduleTasks(dateId) {
+      const uidVal = await getUserId();
+      const snap = await get(ref(db, `users/${uidVal}/schedule/${dateId}/tasks`));
+      if (!snap.exists()) return [];
+      const val = snap.val() || {};
+      return Object.entries(val).map(([id, data]) => ({ id, ...(data || {}) }));
+    }
+
+    async function setTaskCompleted(dateId, taskId, completed, completedPages = null) {
+      const uidVal = await getUserId();
+      await update(ref(db, `users/${uidVal}/schedule/${dateId}/tasks/${taskId}`), {
+        status: completed ? 'completed' : 'pending',
+        completedPages: completed ? completedPages : null
+      });
+    }
+
+    // Timezone functions
+    function nowInOman() {
+      return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Muscat" }));
+    }
+
+    function formatDateId(date) {
+      return date.toISOString().split('T')[0];
+    }
+
+    function rangeDays(start, end) {
+      const days = [];
+      const current = new Date(start);
+      while (current <= end) {
+        days.push(new Date(current));
+        current.setDate(current.getDate() + 1);
+      }
+      return days;
+    }
+
+    // Copy functions
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        alert('تم نسخ النص بنجاح!');
+      } catch (err) {
+        console.error('فشل في النسخ:', err);
+        alert('فشل في نسخ النص');
+      }
+    }
+
+    // Main schedule functionality
+    const scheduleDate = document.getElementById('scheduleDate');
+    const pendingCount = document.getElementById('pendingCount');
+    const completedCount = document.getElementById('completedCount');
+    const copyScheduleBtn = document.getElementById('copyScheduleBtn');
+
+    function humanDate(d) {
+      return d.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function dayName(d){
+      return d.toLocaleDateString('ar-EG', { weekday: 'long' });
+    }
+
+    function renderItem(t, subjectNameMap) {
+      const isCompleted = t.status === 'completed';
+      const classes = ['card-task', 'p-2'];
+      if (t.source === 'late') classes.push('late');
+      if (isCompleted) classes.push('completed');
+      const name = t.subjectName || subjectNameMap.get(t.subjectId) || t.subjectId || 'بدون اسم';
+      return `
+        <div class="${classes.join(' ')}" data-id="${t.id}">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="title">${name}</div>
+              <div class="small text-muted">صفحات: ${t.pages || 0}</div>
+            </div>
+            <div class="text-end">
+              <div class="badge bg-light text-dark mb-1">${t.minutes || 0} د</div>
+              <div>
+                <label class="form-check small mb-0">
+                  <input type="checkbox" class="form-check-input complete" ${isCompleted ? 'checked' : ''}>
+                  <span class="ms-1">تم</span>
+                </label>
+                ${isCompleted ? '<button class="btn btn-sm btn-outline-danger ms-2 undo">إلغاء</button>' : ''}
+              </div>
+            </div>
+          </div>
+          ${t.note ? `<div class="mt-1 small text-muted">ملاحظة: ${t.note}</div>` : ''}
+        </div>`;
+    }
+
+    async function loadAndRender() {
+      const today = nowInOman();
+      const dateId = formatDateId(today);
+      scheduleDate.textContent = `جدول يوم ${humanDate(today)}`;
+
+      const pendingWrap = document.getElementById('dailyPending');
+      const completedWrap = document.getElementById('dailyCompleted');
+      const todayNameEl = document.getElementById('todayName');
+      const upcomingWrap = document.getElementById('upcomingExams');
+
+      const tasks = await listScheduleTasks(dateId);
+      const subs = await listSubjects();
+      const subjectNameMap = new Map(subs.map(s => [s.id, s.name]));
+      const pending = tasks.filter(t => t.status !== 'completed');
+      const completed = tasks.filter(t => t.status === 'completed');
+
+      pendingWrap.innerHTML = pending.map(t => renderItem(t, subjectNameMap)).join('') || '<div class="text-muted">لا توجد مهام حالية.</div>';
+      completedWrap.innerHTML = completed.map(t => renderItem(t, subjectNameMap)).join('') || '<div class="text-muted">لا يوجد إنجازات بعد.</div>';
+      pendingCount.textContent = pending.length;
+      completedCount.textContent = completed.length;
+
+      // عرض يوم اليوم وامتحانات/واجبات قريبة من إدخال اليوم
+      const dailyEntry = await getDailyEntry(dateId);
+      todayNameEl.textContent = `اليوم: ${dayName(today)}`;
+      const exams = (dailyEntry?.examTasks || []).slice().sort((a,b)=>{
+        const ad = new Date(a.dueDate||'9999-12-31');
+        const bd = new Date(b.dueDate||'9999-12-31');
+        return ad - bd;
+      });
+      upcomingWrap.innerHTML = exams.length
+        ? exams.map((ex, idx) => {
+            const due = ex.dueDate ? new Date(ex.dueDate + 'T00:00:00') : null;
+            const dName = due ? due.toLocaleDateString('ar-EG', { weekday: 'long' }) : '-';
+            return `
+            <div class="card-task p-2" data-ex-idx="${idx}">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="title">${ex.subjectName}</div>
+                  <div class="small text-muted">تاريخ: ${ex.dueDate || '-'} (${dName}) — صفحات: ${ex.pages || 0}</div>
+                </div>
+              </div>
+              <div class="mt-1"><span class="badge bg-light text-dark">${ex.requiredHours||0} س</span></div>
+            </div>`;
+          }).join('')
+        : '<div class="text-muted">لا توجد اختبارات/واجبات قريبة.</div>';
+
+      // تفويض الأحداث لحاويات القوائم
+      function bindContainer(container) {
+        container.addEventListener('change', async (e) => {
+          const card = e.target.closest('.card-task');
+          if (!card) return;
+          if (e.target.classList.contains('complete')) {
+            const id = card.dataset.id;
+            const checked = e.target.checked;
+            if (checked) {
+              // تأثير انفجار قبل إعادة التحميل
+              card.classList.add('explode');
+              setTimeout(() => card.classList.remove('explode'), 450);
+            }
+            await setTaskCompleted(dateId, id, checked);
+            await loadAndRender();
+          }
+        });
+        container.addEventListener('click', async (e) => {
+          const card = e.target.closest('.card-task');
+          if (!card) return;
+          if (e.target.classList.contains('undo')) {
+            const id = card.dataset.id;
+            await setTaskCompleted(dateId, id, false);
+            await loadAndRender();
+          }
+        });
+      }
+
+      // لإزالة أي مستمعات قديمة، نستبدل العنصر ثم نربط
+      const newPending = pendingWrap.cloneNode(true);
+      const newCompleted = completedWrap.cloneNode(true);
+      pendingWrap.parentNode.replaceChild(newPending, pendingWrap);
+      completedWrap.parentNode.replaceChild(newCompleted, completedWrap);
+
+      bindContainer(document.getElementById('dailyPending'));
+      bindContainer(document.getElementById('dailyCompleted'));
+
+      copyScheduleBtn?.addEventListener('click', async () => {
+        const lines = tasks.map(t => `${t.subjectName || t.subjectId} - ${t.minutes || 0}د - صفحات:${t.pages || 0} - ${t.status === 'completed' ? 'مكتمل' : 'غير مكتمل'}`);
+        await copyText(lines.join('\n'));
+      }, { once: true });
+    }
+
+    // Achievements functionality
+    const achDailyContainer = document.getElementById('achDailyContainer');
+    const achWeeklyContainer = document.getElementById('achWeeklyContainer');
+    const achMonthlyContainer = document.getElementById('achMonthlyContainer');
+    const copyAchievementsBtn = document.getElementById('copyAchievementsBtn');
+
+    function makeCard(subjectNameMap) {
+      return function card(item) {
+        const isPending = item.status !== 'completed';
+        const name = item.subjectName || subjectNameMap.get(item.subjectId) || item.subjectId || 'بدون اسم';
+        return `
+          <div class="card-task ${isPending ? 'late' : 'completed'}" data-id="${item.id}" data-dateid="${item.date}">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="title">${name}</div>
+              <div class="badge bg-light text-dark">${item.pages || 0} صفحة</div>
+            </div>
+            <div class="small text-muted">${item.date} — الحالة: ${isPending ? 'غير مكتمل' : 'مكتمل'}</div>
+          </div>`;
+      }
+    }
+
+    async function gather(rangeStart, rangeEnd) {
+      const dates = rangeDays(rangeStart, rangeEnd).map(d => formatDateId(d));
+      const all = [];
+      for (const d of dates) {
+        const tasks = await listScheduleTasks(d);
+        for (const t of tasks) all.push({ ...t, date: d });
+      }
+      return all;
+    }
+
+    async function renderAchievements() {
+      const today = nowInOman();
+      const todayId = formatDateId(today);
+
+      const subjects = await listSubjects();
+      const subjectNameMap = new Map(subjects.map(s => [s.id, s.name]));
+      const card = makeCard(subjectNameMap);
+
+      // يومي
+      const daily = await listScheduleTasks(todayId);
+      achDailyContainer.innerHTML = daily.map(t => card({ ...t, date: todayId })).join('') || '<div class="text-muted">لا توجد مهام اليوم.</div>';
+
+      // أسبوعي (الأحد إلى السبت)
+      const day = today.getDay();
+      const sunday = new Date(today); sunday.setDate(today.getDate() - day);
+      const saturday = new Date(sunday); saturday.setDate(sunday.getDate() + 6);
+      const weekly = await gather(sunday, saturday);
+      achWeeklyContainer.innerHTML = weekly.map(card).join('') || '<div class="text-muted">لا توجد مهام هذا الأسبوع.</div>';
+
+      // شهري
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      const monthly = await gather(monthStart, monthEnd);
+      achMonthlyContainer.innerHTML = monthly.map(card).join('') || '<div class="text-muted">لا توجد مهام هذا الشهر.</div>';
+
+      copyAchievementsBtn?.addEventListener('click', async () => {
+        const allTasks = [...daily, ...weekly, ...monthly];
+        const lines = allTasks.map(t => `${t.subjectName || t.subjectId} - ${t.date} - ${t.status === 'completed' ? 'مكتمل' : 'غير مكتمل'}`);
+        await copyText(lines.join('\n'));
+      }, { once: true });
+    }
+
+    // Initialize
+    loadAndRender();
+    renderAchievements();
+  </script>
+</body>
+</html>
