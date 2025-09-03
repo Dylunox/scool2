@@ -3,675 +3,261 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>جدول المراجعة</title>
+  <title>جدول المراجعة وسجل الإنجازات</title>
   <meta name="theme-color" content="#0d6efd" />
+  <link rel="manifest" href="manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.gstatic.com" />
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet" />
-  
-  <style>
-    /* خطوط وأساسيات محسنة */
-    :root { 
-      --brand: #4f46e5; 
-      --success: #10b981; 
-      --danger: #ef4444; 
-      --warning: #f59e0b;
-      --info: #06b6d4;
-      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-      --danger-gradient: linear-gradient(135deg, #ff6b6b 0%, #ffa726 100%);
-    }
-    
-    body { 
-      font-family: Tajawal, sans-serif; 
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-      color: #1e293b; 
-      min-height: 100vh;
-    }
-
-    /* حاويات محسّنة مع تأثيرات بصرية */
-    .container { max-width: 1200px; }
-    
-    header { 
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-      border: none;
-      border-radius: 1rem; 
-      padding: 1.5rem 2rem; 
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      backdrop-filter: blur(10px);
-      margin-bottom: 2rem;
-    }
-    
-    header h1 {
-      background: var(--primary-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      font-size: 2rem;
-      font-weight: 800;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    /* بطاقات محسنة مع تدرجات لونية */
-    .card-task { 
-      border: none;
-      border-radius: 1rem; 
-      padding: 1.25rem; 
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-      transition: all .3s ease; 
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .card-task::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: var(--primary-gradient);
-      opacity: 0;
-      transition: opacity .3s ease;
-    }
-    
-    .card-task:hover { 
-      transform: translateY(-5px) scale(1.02); 
-      box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-    }
-    
-    .card-task:hover::before {
-      opacity: 1;
-    }
-    
-    .card-task .title { 
-      font-weight: 800; 
-      color: #1e293b; 
-      font-size: 1.1rem;
-      margin-bottom: 0.5rem;
-    }
-    
-    .card-task.late { 
-      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-      border-left: 4px solid var(--danger);
-    }
-    
-    .card-task.late::before {
-      background: var(--danger-gradient);
-    }
-    
-    .card-task.completed { 
-      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-      border-left: 4px solid var(--success);
-    }
-    
-    .card-task.completed::before {
-      background: var(--success-gradient);
-    }
-    
-    /* إخفاء عناصر التفاعل في وضع العرض */
-    .card-task input[type="checkbox"], .card-task button { display: none !important; }
-
-    /* أقسام محسنة */
-    .section-card {
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-      border: none;
-      border-radius: 1rem;
-      padding: 1.5rem;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-      margin-bottom: 2rem;
-      backdrop-filter: blur(10px);
-    }
-    
-    .section-title {
-      font-weight: 700;
-      color: #1e293b;
-      font-size: 1.25rem;
-      margin-bottom: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    
-    .section-title::before {
-      content: '';
-      width: 4px;
-      height: 20px;
-      background: var(--primary-gradient);
-      border-radius: 2px;
-    }
-
-    /* شارات محسنة */
-    .badge {
-      font-weight: 600;
-      padding: 0.5rem 1rem;
-      border-radius: 50px;
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .badge.bg-success {
-      background: var(--success-gradient) !important;
-      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-    }
-    
-    .badge.bg-warning {
-      background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%) !important;
-      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-    }
-    
-    .badge.bg-danger {
-      background: var(--danger-gradient) !important;
-      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
-    }
-    
-    .badge.bg-light {
-      background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
-      color: #64748b !important;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    /* أزرار محسنة */
-    .btn {
-      border-radius: 50px;
-      padding: 0.75rem 1.5rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      transition: all .3s ease;
-      border: none;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-      transition: left .5s ease;
-    }
-    
-    .btn:hover::before {
-      left: 100%;
-    }
-    
-    .btn-outline-primary {
-      background: transparent;
-      border: 2px solid var(--brand);
-      color: var(--brand);
-    }
-    
-    .btn-outline-primary:hover {
-      background: var(--primary-gradient);
-      border-color: transparent;
-      color: white;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);
-    }
-    
-    .btn-outline-secondary {
-      background: transparent;
-      border: 2px solid #64748b;
-      color: #64748b;
-    }
-    
-    .btn-outline-secondary:hover {
-      background: linear-gradient(135deg, #64748b 0%, #475569 100%);
-      border-color: transparent;
-      color: white;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(100, 116, 139, 0.3);
-    }
-
-    /* تبويبات محسنة */
-    .nav-tabs {
-      border: none;
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-      border-radius: 1rem;
-      padding: 0.5rem;
-    }
-    
-    .nav-tabs .nav-link {
-      border: none;
-      border-radius: 0.75rem;
-      color: #64748b;
-      font-weight: 600;
-      transition: all .3s ease;
-      margin: 0 0.25rem;
-    }
-    
-    .nav-tabs .nav-link.active {
-      background: var(--primary-gradient);
-      color: white;
-      box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
-    }
-    
-    .nav-tabs .nav-link:hover:not(.active) {
-      background: rgba(79, 70, 229, 0.1);
-      color: var(--brand);
-    }
-    
-    .tab-content {
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-      border: none;
-      border-radius: 0 0 1rem 1rem;
-      padding: 2rem;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    }
-
-    /* رسوم متحركة ناعمة */
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    .card-task {
-      animation: fadeInUp 0.6s ease forwards;
-    }
-    
-    .card-task:nth-child(1) { animation-delay: 0.1s; }
-    .card-task:nth-child(2) { animation-delay: 0.2s; }
-    .card-task:nth-child(3) { animation-delay: 0.3s; }
-    .card-task:nth-child(4) { animation-delay: 0.4s; }
-    .card-task:nth-child(5) { animation-delay: 0.5s; }
-
-    /* تحسينات للهاتف المحمول */
-    @media (max-width: 768px) {
-      header {
-        padding: 1rem;
-        margin-bottom: 1rem;
-      }
-      
-      header h1 {
-        font-size: 1.5rem;
-      }
-      
-      .card-task {
-        padding: 1rem;
-      }
-      
-      .section-card {
-        padding: 1rem;
-      }
-    }
-
-    /* طباعة جميلة */
-    @media print {
-      header, .btn, .nav, .modal { display: none !important; }
-      body { 
-        color: #000; 
-        background: #fff; 
-        -webkit-print-color-adjust: exact;
-      }
-      .card-task {
-        box-shadow: none;
-        border: 1px solid #ccc;
-        break-inside: avoid;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="assets/css/styles.css" />
 </head>
-<body>
+<body class="bg-white" style="font-family:Tajawal,sans-serif">
   <div class="container py-3">
-    <header class="d-flex justify-content-center align-items-center mb-3">
-      <h1 class="mb-0">📊 جدول المراجعة</h1>
+    <header class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h4 mb-0">جدول المراجعة</h1>
+      <a class="btn btn-outline-secondary" href="index.html">العودة للإدخال</a>
     </header>
 
     <section class="mb-4">
       <div class="d-flex justify-content-between align-items-center mb-2">
         <h2 class="h5 mb-0" id="scheduleDate">اليوم</h2>
         <div class="d-flex gap-2">
+          <button class="btn btn-success btn-sm d-none" id="refreshDataBtn" aria-hidden="true">تحديث البيانات</button>
           <button class="btn btn-outline-primary btn-sm" id="copyScheduleBtn">نسخ الجدول</button>
+          <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#notifyTestModal">إشعار مجدول</button>
           <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">طباعة</button>
         </div>
       </div>
 
-      <div class="row g-4">
+      <div class="row g-3">
         <div class="col-12 col-lg-6">
-          <div class="section-card">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h3 class="section-title mb-0">🔄 مهام غير مكتملة</h3>
+          <div class="border rounded p-2">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h3 class="h6 mb-0">مهام اليوم - غير مكتملة</h3>
               <span class="badge bg-danger" id="pendingCount">0</span>
             </div>
-            <div id="dailyPending" class="vstack gap-3"></div>
+            <div id="dailyPending" class="vstack gap-2"></div>
           </div>
         </div>
         <div class="col-12 col-lg-6">
-          <div class="section-card">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h3 class="section-title mb-0">✅ مهام مكتملة</h3>
+          <div class="border rounded p-2">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h3 class="h6 mb-0">مهام اليوم - مكتملة</h3>
               <span class="badge bg-success" id="completedCount">0</span>
             </div>
-            <div id="dailyCompleted" class="vstack gap-3"></div>
+            <div id="dailyCompleted" class="vstack gap-2"></div>
           </div>
         </div>
       </div>
     </section>
 
     <section class="mt-4">
-      <div class="section-card">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h3 class="section-title mb-0">📚 اختبارات/واجبات قريبة</h3>
+      <div class="border rounded p-2">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h3 class="h6 mb-0">اختبارات/واجبات قريبة</h3>
           <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-light" id="todayName"></span>
+            <button class="btn btn-sm btn-outline-secondary" id="testNotificationBtn">اختبار إرسال إشعار</button>
+            <span class="text-muted small" id="todayName"></span>
           </div>
         </div>
-        <div id="upcomingExams" class="vstack gap-3"></div>
+        <div id="upcomingExams" class="vstack gap-2"></div>
       </div>
     </section>
 
-    <section class="mt-4">
-      <div class="section-card">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h2 class="section-title mb-0">🏆 سجل الإنجازات</h2>
-          <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary btn-sm" id="copyAchievementsBtn">نسخ السجل</button>
-            <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">طباعة</button>
+    <!-- Modal تعديل اختبار/واجب -->
+    <div class="modal fade" id="editExamModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">تعديل اختبار/واجب</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body vstack gap-2">
+            <input class="form-control" id="examSubjInput" placeholder="المادة" />
+            <input type="date" class="form-control" id="examDateInput" />
+            <input type="number" class="form-control" id="examHoursInput" min="0" step="0.5" placeholder="ساعات" />
+            <input type="number" class="form-control" id="examPagesInput" min="0" placeholder="صفحات" />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button class="btn btn-primary" id="saveExamBtn">حفظ</button>
           </div>
         </div>
+      </div>
+    </div>
 
-        <ul class="nav nav-tabs" id="achTabs" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#achDaily" type="button" role="tab">📅 يومي</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#achWeekly" type="button" role="tab">📊 أسبوعي</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#achMonthly" type="button" role="tab">📈 شهري</button>
-          </li>
-        </ul>
-        <div class="tab-content">
-          <div class="tab-pane fade show active" id="achDaily" role="tabpanel">
-            <div id="achDailyContainer" class="vstack gap-3"></div>
+    <!-- Modal اختبار إرسال إشعار -->
+    <div class="modal fade" id="notifyTestModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">اختبار إرسال إشعار</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="tab-pane fade" id="achWeekly" role="tabpanel">
-            <div id="achWeeklyContainer" class="vstack gap-3"></div>
+          <div class="modal-body vstack gap-2">
+            <input type="datetime-local" class="form-control" id="notifyWhen" />
+            <input class="form-control" id="notifyTitle" placeholder="عنوان الإشعار" value="تذكير مهم" />
+            <textarea class="form-control" id="notifyBody" rows="2" placeholder="نص الإشعار">لا تنسَ مهمة المراجعة المحددة.</textarea>
           </div>
-          <div class="tab-pane fade" id="achMonthly" role="tabpanel">
-            <div id="achMonthlyContainer" class="vstack gap-3"></div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button class="btn btn-primary" id="scheduleNotifyBtn">جدولة الإشعار</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Study Session Interface -->
+    <div id="studySessionOverlay" class="study-session-overlay d-none">
+      <div class="study-session-container">
+        <div class="study-session-header">
+          <h2 id="studySubjectName" class="study-subject-title">مراجعة المادة</h2>
+          <button class="btn btn-outline-danger" id="endStudyBtn">إنهاء المراجعة</button>
+        </div>
+        
+        <!-- تفاصيل المادة والملاحظات -->
+        <div class="subject-details-section" id="subjectDetailsSection">
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <div class="detail-card">
+                <div class="detail-icon">📖</div>
+                <div class="detail-content">
+                  <div class="detail-label">الصفحات</div>
+                  <div class="detail-value" id="studyPages">0</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="detail-card">
+                <div class="detail-icon">📅</div>
+                <div class="detail-content">
+                  <div class="detail-label">تاريخ المهمة</div>
+                  <div class="detail-value" id="studyDate">اليوم</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="detail-card">
+                <div class="detail-icon">⏰</div>
+                <div class="detail-content">
+                  <div class="detail-label">وقت البداية</div>
+                  <div class="detail-value" id="studyStartTime">--:--</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- الملاحظات -->
+          <div class="notes-section" id="notesSection" style="display: none;">
+            <div class="notes-card">
+              <div class="notes-header">
+                <span class="notes-icon">📝</span>
+                <span class="notes-title">ملاحظات المراجعة</span>
+              </div>
+              <div class="notes-content" id="studyNotes">لا توجد ملاحظات</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="study-timer-section">
+          <div class="timer-display">
+            <div id="studyTimer" class="timer-text">40:00</div>
+            <div id="studyPhase" class="phase-text">وقت المراجعة</div>
+          </div>
+          
+          <div class="timer-progress">
+            <div id="timerProgressBar" class="progress-bar"></div>
+          </div>
+          
+          <div class="session-info">
+            <div class="session-stats">
+              <div class="stat-item">
+                <span class="stat-label">الجلسة الحالية:</span>
+                <span id="currentSession" class="stat-value">1</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">إجمالي الوقت:</span>
+                <span id="totalStudyTime" class="stat-value">0:00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="study-controls">
+          <button class="btn btn-success" id="pauseResumeBtn">إيقاف مؤقت</button>
+          <button class="btn btn-warning" id="skipBreakBtn" style="display: none;">تخطي الراحة</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal تأكيد إنهاء المراجعة -->
+    <div class="modal fade" id="endStudyModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">تأكيد إنهاء المراجعة</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>هل أنت متأكد من إنهاء جلسة المراجعة؟</p>
+            <div class="alert alert-info">
+              <strong>إحصائيات الجلسة:</strong><br>
+              الوقت المدروس: <span id="finalStudyTime">0:00</span><br>
+              عدد الجلسات: <span id="finalSessions">0</span>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button class="btn btn-danger" id="confirmEndStudyBtn">إنهاء المراجعة</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="mt-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h5 mb-0">سجل الإنجازات</h2>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-primary btn-sm" id="copyAchievementsBtn">نسخ السجل</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="window.print()">طباعة</button>
+        </div>
+      </div>
+
+      <ul class="nav nav-tabs" id="achTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#achDaily" type="button" role="tab">يومي</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#achWeekly" type="button" role="tab">أسبوعي</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#achMonthly" type="button" role="tab">شهري</button>
+        </li>
+      </ul>
+      <div class="tab-content border border-top-0 p-3">
+        <div class="tab-pane fade show active" id="achDaily" role="tabpanel">
+          <div id="achDailyContainer" class="vstack gap-2"></div>
+        </div>
+        <div class="tab-pane fade" id="achWeekly" role="tabpanel">
+          <div id="achWeeklyContainer" class="vstack gap-2"></div>
+        </div>
+        <div class="tab-pane fade" id="achMonthly" role="tabpanel">
+          <div id="achMonthlyContainer" class="vstack gap-2"></div>
         </div>
       </div>
     </section>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  
-  <script type="module">
-    // Firebase initialization (v12.2.1)
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
-    import { getDatabase } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js';
-    import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
-    import { ref, get, set, push, update, remove, child } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js';
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyCkfdSNkWjzVy77FZoUpg6JvTgNt29Pbac",
-      authDomain: "scool-49436.firebaseapp.com",
-      databaseURL: "https://scool-49436-default-rtdb.firebaseio.com",
-      projectId: "scool-49436",
-      storageBucket: "scool-49436.firebasestorage.app",
-      messagingSenderId: "64670832141",
-      appId: "1:64670832141:web:ac1141ad3fc627c11ba744",
-      measurementId: "G-K6EPZHKMEH"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const auth = getAuth(app);
-    
-    const userReady = (async () => {
-      try {
-        if (!auth.currentUser) await signInAnonymously(auth);
-        return auth.currentUser;
-      } catch (e) {
-        console.warn('Auth failed:', e);
-        return null;
-      }
-    })();
-
-    async function getUserId() {
-      const u = await userReady;
-      return u?.uid || 'local-user';
-    }
-
-    // Database functions
-    async function listSubjects() {
-      const id = await getUserId();
-      const snap = await get(ref(db, `users/${id}/subjects`));
-      if (!snap.exists()) return [];
-      const obj = snap.val() || {};
-      return Object.entries(obj).map(([id, data]) => ({ id, ...(data || {}) }));
-    }
-
-    async function getDailyEntry(dateId) {
-      const uidVal = await getUserId();
-      const snap = await get(ref(db, `users/${uidVal}/entries/${dateId}`));
-      return snap.exists() ? snap.val() : null;
-    }
-
-    async function listScheduleTasks(dateId) {
-      const uidVal = await getUserId();
-      const snap = await get(ref(db, `users/${uidVal}/schedule/${dateId}/tasks`));
-      if (!snap.exists()) return [];
-      const val = snap.val() || {};
-      return Object.entries(val).map(([id, data]) => ({ id, ...(data || {}) }));
-    }
-
-    // تم حذف وظيفة setTaskCompleted - صفحة العرض فقط
-
-    // Timezone functions
-    function nowInOman() {
-      return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Muscat" }));
-    }
-
-    function formatDateId(date) {
-      return date.toISOString().split('T')[0];
-    }
-
-    function rangeDays(start, end) {
-      const days = [];
-      const current = new Date(start);
-      while (current <= end) {
-        days.push(new Date(current));
-        current.setDate(current.getDate() + 1);
-      }
-      return days;
-    }
-
-    // Copy functions
-    async function copyText(text) {
-      try {
-        await navigator.clipboard.writeText(text);
-        alert('تم نسخ النص بنجاح!');
-      } catch (err) {
-        console.error('فشل في النسخ:', err);
-        alert('فشل في نسخ النص');
-      }
-    }
-
-    // Main schedule functionality
-    const scheduleDate = document.getElementById('scheduleDate');
-    const pendingCount = document.getElementById('pendingCount');
-    const completedCount = document.getElementById('completedCount');
-    const copyScheduleBtn = document.getElementById('copyScheduleBtn');
-
-    function humanDate(d) {
-      return d.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    }
-
-    function dayName(d){
-      return d.toLocaleDateString('ar-EG', { weekday: 'long' });
-    }
-
-    function renderItem(t, subjectNameMap) {
-      const isCompleted = t.status === 'completed';
-      const classes = ['card-task', 'p-2'];
-      if (t.source === 'late') classes.push('late');
-      if (isCompleted) classes.push('completed');
-      const name = t.subjectName || subjectNameMap.get(t.subjectId) || t.subjectId || 'بدون اسم';
-      return `
-        <div class="${classes.join(' ')}" data-id="${t.id}">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <div class="title">${isCompleted ? '✅' : '📚'} ${name}</div>
-              <div class="small text-muted">📄 ${t.pages || 0} صفحة</div>
-            </div>
-            <div class="text-end">
-              <div class="d-flex gap-2 align-items-center">
-                <span class="badge bg-light text-dark">⏱️ ${t.minutes || 0} دقيقة</span>
-                <span class="badge ${isCompleted ? 'bg-success' : 'bg-warning'} text-white">
-                  ${isCompleted ? 'مكتمل' : 'غير مكتمل'}
-                </span>
-              </div>
-            </div>
-          </div>
-          ${t.note ? `<div class="mt-2 small text-muted">💡 ${t.note}</div>` : ''}
-        </div>`;
-    }
-
-    async function loadAndRender() {
-      const today = nowInOman();
-      const dateId = formatDateId(today);
-      scheduleDate.textContent = `جدول يوم ${humanDate(today)}`;
-
-      const pendingWrap = document.getElementById('dailyPending');
-      const completedWrap = document.getElementById('dailyCompleted');
-      const todayNameEl = document.getElementById('todayName');
-      const upcomingWrap = document.getElementById('upcomingExams');
-
-      const tasks = await listScheduleTasks(dateId);
-      const subs = await listSubjects();
-      const subjectNameMap = new Map(subs.map(s => [s.id, s.name]));
-      const pending = tasks.filter(t => t.status !== 'completed');
-      const completed = tasks.filter(t => t.status === 'completed');
-
-      pendingWrap.innerHTML = pending.map(t => renderItem(t, subjectNameMap)).join('') || '<div class="text-muted text-center py-4">🤔 لا توجد مهام حالية</div>';
-      completedWrap.innerHTML = completed.map(t => renderItem(t, subjectNameMap)).join('') || '<div class="text-muted text-center py-4">🎉 لا يوجد إنجازات بعد</div>';
-      pendingCount.textContent = pending.length;
-      completedCount.textContent = completed.length;
-
-      // عرض يوم اليوم وامتحانات/واجبات قريبة من إدخال اليوم
-      const dailyEntry = await getDailyEntry(dateId);
-      todayNameEl.textContent = `اليوم: ${dayName(today)}`;
-      const exams = (dailyEntry?.examTasks || []).slice().sort((a,b)=>{
-        const ad = new Date(a.dueDate||'9999-12-31');
-        const bd = new Date(b.dueDate||'9999-12-31');
-        return ad - bd;
-      });
-      upcomingWrap.innerHTML = exams.length
-        ? exams.map((ex, idx) => {
-            const due = ex.dueDate ? new Date(ex.dueDate + 'T00:00:00') : null;
-            const dName = due ? due.toLocaleDateString('ar-EG', { weekday: 'long' }) : '-';
-            return `
-            <div class="card-task" data-ex-idx="${idx}">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <div class="title">📖 ${ex.subjectName}</div>
-                  <div class="small text-muted">📅 ${ex.dueDate || '-'} (${dName}) — 📄 ${ex.pages || 0} صفحة</div>
-                </div>
-                <div class="d-flex gap-2 align-items-center">
-                  <span class="badge bg-light">${ex.requiredHours||0} ساعة</span>
-                  <span class="badge bg-info text-white">قريب</span>
-                </div>
-              </div>
-            </div>`;
-          }).join('')
-        : '<div class="text-muted text-center py-4">📚 لا توجد اختبارات/واجبات قريبة</div>';
-
-      // صفحة العرض فقط - لا توجد تفاعلات للتعديل
-
-      copyScheduleBtn?.addEventListener('click', async () => {
-        const lines = tasks.map(t => `${t.subjectName || t.subjectId} - ${t.minutes || 0}د - صفحات:${t.pages || 0} - ${t.status === 'completed' ? 'مكتمل' : 'غير مكتمل'}`);
-        await copyText(lines.join('\n'));
-      }, { once: true });
-    }
-
-    // Achievements functionality
-    const achDailyContainer = document.getElementById('achDailyContainer');
-    const achWeeklyContainer = document.getElementById('achWeeklyContainer');
-    const achMonthlyContainer = document.getElementById('achMonthlyContainer');
-    const copyAchievementsBtn = document.getElementById('copyAchievementsBtn');
-
-    function makeCard(subjectNameMap) {
-      return function card(item) {
-        const isPending = item.status !== 'completed';
-        const name = item.subjectName || subjectNameMap.get(item.subjectId) || item.subjectId || 'بدون اسم';
-        return `
-          <div class="card-task ${isPending ? 'late' : 'completed'}" data-id="${item.id}" data-dateid="${item.date}">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <div class="title">${isPending ? '⏳' : '🎯'} ${name}</div>
-                <div class="small text-muted">📅 ${item.date}</div>
-              </div>
-              <div class="d-flex gap-2 align-items-center">
-                <span class="badge bg-light text-dark">📄 ${item.pages || 0} صفحة</span>
-                <span class="badge ${isPending ? 'bg-warning' : 'bg-success'} text-white">
-                  ${isPending ? 'غير مكتمل' : 'مكتمل'}
-                </span>
-              </div>
-            </div>
-          </div>`;
-      }
-    }
-
-    async function gather(rangeStart, rangeEnd) {
-      const dates = rangeDays(rangeStart, rangeEnd).map(d => formatDateId(d));
-      const all = [];
-      for (const d of dates) {
-        const tasks = await listScheduleTasks(d);
-        for (const t of tasks) all.push({ ...t, date: d });
-      }
-      return all;
-    }
-
-    async function renderAchievements() {
-      const today = nowInOman();
-      const todayId = formatDateId(today);
-
-      const subjects = await listSubjects();
-      const subjectNameMap = new Map(subjects.map(s => [s.id, s.name]));
-      const card = makeCard(subjectNameMap);
-
-      // يومي
-      const daily = await listScheduleTasks(todayId);
-      achDailyContainer.innerHTML = daily.map(t => card({ ...t, date: todayId })).join('') || '<div class="text-muted text-center py-4">📅 لا توجد مهام اليوم</div>';
-
-      // أسبوعي (الأحد إلى السبت)
-      const day = today.getDay();
-      const sunday = new Date(today); sunday.setDate(today.getDate() - day);
-      const saturday = new Date(sunday); saturday.setDate(sunday.getDate() + 6);
-      const weekly = await gather(sunday, saturday);
-      achWeeklyContainer.innerHTML = weekly.map(card).join('') || '<div class="text-muted text-center py-4">📊 لا توجد مهام هذا الأسبوع</div>';
-
-      // شهري
-      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-      const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      const monthly = await gather(monthStart, monthEnd);
-      achMonthlyContainer.innerHTML = monthly.map(card).join('') || '<div class="text-muted text-center py-4">📈 لا توجد مهام هذا الشهر</div>';
-
-      copyAchievementsBtn?.addEventListener('click', async () => {
-        const allTasks = [...daily, ...weekly, ...monthly];
-        const lines = allTasks.map(t => `${t.subjectName || t.subjectId} - ${t.date} - ${t.status === 'completed' ? 'مكتمل' : 'غير مكتمل'}`);
-        await copyText(lines.join('\n'));
-      }, { once: true });
-    }
-
-    // Initialize
-    loadAndRender();
-    renderAchievements();
-  </script>
+  <script src="assets/js/session-manager.js"></script>
+  <script type="module" src="assets/js/firebase.js"></script>
+  <script type="module" src="assets/js/db.js"></script>
+  <script type="module" src="assets/js/timezone.js"></script>
+  <script type="module" src="assets/js/copy.js"></script>
+  <script type="module" src="assets/js/advanced-notifications.js"></script>
+  <script type="module" src="assets/js/study-session.js"></script>
+  <script type="module" src="assets/js/schedule.js"></script>
+  <script type="module" src="assets/js/achievements.js"></script>
+  <script type="module" src="assets/js/sync.js"></script>
 </body>
 </html>
