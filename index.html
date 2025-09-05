@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" />
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/pomodoro.css" />
   
   <style>
     /* خطوط وأساسيات محسنة */
@@ -112,6 +113,77 @@
     
     /* إخفاء عناصر التفاعل في وضع العرض */
     .card-task input[type="checkbox"], .card-task button { display: none !important; }
+    
+    /* عرض وقت Pomodoro المباشر - للعرض فقط */
+    .live-timer-display {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 1rem;
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+      z-index: 1000;
+      min-width: 200px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255,255,255,0.1);
+      animation: fadeInRight 0.5s ease;
+    }
+    
+    .live-timer-display.break-mode {
+      background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+    }
+    
+    .timer-phase {
+      font-size: 0.9rem;
+      font-weight: 600;
+      opacity: 0.9;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    
+    .timer-time {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin: 0.5rem 0;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .timer-task {
+      font-size: 0.85rem;
+      opacity: 0.9;
+      font-weight: 500;
+      margin-top: 0.5rem;
+    }
+    
+    @keyframes fadeInRight {
+      from {
+        opacity: 0;
+        transform: translateX(100px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    /* تحسينات للهاتف المحمول */
+    @media (max-width: 768px) {
+      .live-timer-display {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        padding: 0.75rem 1rem;
+      }
+      
+      .timer-time {
+        font-size: 1.5rem;
+      }
+    }
 
     /* أقسام محسنة */
     .section-card {
@@ -416,6 +488,8 @@
     import { getDatabase } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js';
     import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
     import { ref, get, set, push, update, remove, child } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js';
+    
+    // لا نحتاج لاستيراد PomodoroTimer في صفحة العرض
 
     const firebaseConfig = {
       apiKey: "AIzaSyCkfdSNkWjzVy77FZoUpg6JvTgNt29Pbac",
@@ -460,6 +534,13 @@
       const uidVal = await getUserId();
       const snap = await get(ref(db, `users/${uidVal}/entries/${dateId}`));
       return snap.exists() ? snap.val() : null;
+    }
+
+    async function getAllDailyEntries() {
+      const uidVal = await getUserId();
+      const snap = await get(ref(db, `users/${uidVal}/entries`));
+      if (!snap.exists()) return {};
+      return snap.val() || {};
     }
 
     async function listScheduleTasks(dateId) {
@@ -516,24 +597,33 @@
       return d.toLocaleDateString('ar-EG', { weekday: 'long' });
     }
 
-    function renderItem(t, subjectNameMap) {
+    function renderItem(t, subjectNameMap, currentDateId) {
       const isCompleted = t.status === 'completed';
       const classes = ['card-task', 'p-2'];
       if (t.source === 'late') classes.push('late');
       if (isCompleted) classes.push('completed');
+      
+      // تحديد المهام المتأخرة - المهام التي أنشئت قبل اليوم الحالي ولم تكتمل
+      const taskDate = t.originalDateId || currentDateId;
+      const isLate = !isCompleted && taskDate < currentDateId;
+      if (isLate) classes.push('late');
+      
       const name = t.subjectName || subjectNameMap.get(t.subjectId) || t.subjectId || 'بدون اسم';
+      const lateLabel = isLate ? '<span class="badge bg-danger ms-2">متأخر</span>' : '';
+      const statusIcon = isCompleted ? '✅' : (isLate ? '⚠️' : '📚');
+      
       return `
         <div class="${classes.join(' ')}" data-id="${t.id}">
           <div class="d-flex justify-content-between align-items-center">
             <div>
-              <div class="title">${isCompleted ? '✅' : '📚'} ${name}</div>
+              <div class="title">${statusIcon} ${name} ${lateLabel}</div>
               <div class="small text-muted">📄 ${t.pages || 0} صفحة</div>
             </div>
             <div class="text-end">
               <div class="d-flex gap-2 align-items-center">
                 <span class="badge bg-light text-dark">⏱️ ${t.minutes || 0} دقيقة</span>
-                <span class="badge ${isCompleted ? 'bg-success' : 'bg-warning'} text-white">
-                  ${isCompleted ? 'مكتمل' : 'غير مكتمل'}
+                <span class="badge ${isCompleted ? 'bg-success' : (isLate ? 'bg-danger' : 'bg-warning')} text-white">
+                  ${isCompleted ? 'مكتمل' : (isLate ? 'متأخر' : 'غير مكتمل')}
                 </span>
               </div>
             </div>
@@ -553,20 +643,68 @@
       const upcomingWrap = document.getElementById('upcomingExams');
 
       const tasks = await listScheduleTasks(dateId);
+      
+      // جمع المهام غير المكتملة من الأيام السابقة للعرض فقط
+      const allEntries = await getAllDailyEntries();
+      const lateTasks = [];
+      
+      for (const [entryDateId, entry] of Object.entries(allEntries)) {
+        if (entryDateId < dateId) { // يوم سابق
+          const oldTasks = await listScheduleTasks(entryDateId);
+          const incompleteTasks = oldTasks.filter(t => t.status !== 'completed');
+          
+          // إضافة التاريخ الأصلي للمهام المتأخرة
+          incompleteTasks.forEach(task => {
+            lateTasks.push({
+              ...task,
+              originalDateId: task.originalDateId || entryDateId,
+              id: `late_${entryDateId}_${task.id}` // معرف فريد للمهام المتأخرة
+            });
+          });
+        }
+      }
+      
+      // دمج المهام الحالية مع المهام المتأخرة
+      const allTasks = [...tasks, ...lateTasks];
+      
       const subs = await listSubjects();
       const subjectNameMap = new Map(subs.map(s => [s.id, s.name]));
-      const pending = tasks.filter(t => t.status !== 'completed');
-      const completed = tasks.filter(t => t.status === 'completed');
+      const pending = allTasks.filter(t => t.status !== 'completed');
+      const completed = allTasks.filter(t => t.status === 'completed');
 
-      pendingWrap.innerHTML = pending.map(t => renderItem(t, subjectNameMap)).join('') || '<div class="text-muted text-center py-4">🤔 لا توجد مهام حالية</div>';
-      completedWrap.innerHTML = completed.map(t => renderItem(t, subjectNameMap)).join('') || '<div class="text-muted text-center py-4">🎉 لا يوجد إنجازات بعد</div>';
+      pendingWrap.innerHTML = pending.map(t => renderItem(t, subjectNameMap, dateId)).join('') || '<div class="text-muted text-center py-4">🤔 لا توجد مهام حالية</div>';
+      completedWrap.innerHTML = completed.map(t => renderItem(t, subjectNameMap, dateId)).join('') || '<div class="text-muted text-center py-4">🎉 لا يوجد إنجازات بعد</div>';
       pendingCount.textContent = pending.length;
       completedCount.textContent = completed.length;
 
-      // عرض يوم اليوم وامتحانات/واجبات قريبة من إدخال اليوم
-      const dailyEntry = await getDailyEntry(dateId);
+      // عرض يوم اليوم وجمع جميع الامتحانات/واجبات القريبة من جميع الأيام
       todayNameEl.textContent = `اليوم: ${dayName(today)}`;
-      const exams = (dailyEntry?.examTasks || []).slice().sort((a,b)=>{
+      
+      // جمع جميع الاختبارات من جميع الأيام (استخدام نفس متغير allEntries)
+      const allExams = [];
+      const todayDate = new Date(today);
+      
+      Object.entries(allEntries).forEach(([entryDateId, entry]) => {
+        if (entry.examTasks && Array.isArray(entry.examTasks)) {
+          entry.examTasks.forEach(exam => {
+            if (exam.dueDate) {
+              const examDate = new Date(exam.dueDate + 'T00:00:00');
+              // عرض الاختبارات للأسبوعين القادمين فقط
+              const daysDiff = Math.ceil((examDate - todayDate) / (1000 * 60 * 60 * 24));
+              if (daysDiff >= 0 && daysDiff <= 14) {
+                allExams.push({
+                  ...exam,
+                  originalDateId: entryDateId,
+                  daysDiff
+                });
+              }
+            }
+          });
+        }
+      });
+      
+      // ترتيب الاختبارات حسب التاريخ
+      const exams = allExams.sort((a,b) => {
         const ad = new Date(a.dueDate||'9999-12-31');
         const bd = new Date(b.dueDate||'9999-12-31');
         return ad - bd;
@@ -575,16 +713,22 @@
         ? exams.map((ex, idx) => {
             const due = ex.dueDate ? new Date(ex.dueDate + 'T00:00:00') : null;
             const dName = due ? due.toLocaleDateString('ar-EG', { weekday: 'long' }) : '-';
+            const daysLeft = ex.daysDiff;
+            const urgencyClass = daysLeft <= 3 ? 'bg-danger' : daysLeft <= 7 ? 'bg-warning' : 'bg-info';
+            const urgencyText = daysLeft === 0 ? 'اليوم' : daysLeft === 1 ? 'غداً' : `خلال ${daysLeft} أيام`;
+            
             return `
-            <div class="card-task" data-ex-idx="${idx}">
+            <div class="card-task" data-ex-idx="${idx}" data-original-date="${ex.originalDateId}">
               <div class="d-flex justify-content-between align-items-center">
                 <div>
                   <div class="title">📖 ${ex.subjectName}</div>
                   <div class="small text-muted">📅 ${ex.dueDate || '-'} (${dName}) — 📄 ${ex.pages || 0} صفحة</div>
+                  <div class="small fw-bold">
+                    <span class="badge ${urgencyClass} text-white">${urgencyText}</span>
+                  </div>
                 </div>
                 <div class="d-flex gap-2 align-items-center">
-                  <span class="badge bg-light">${ex.requiredHours||0} ساعة</span>
-                  <span class="badge bg-info text-white">قريب</span>
+                  <span class="badge bg-light text-dark">⏱️ ${ex.requiredHours||0} ساعة</span>
                 </div>
               </div>
             </div>`;
@@ -594,7 +738,11 @@
       // صفحة العرض فقط - لا توجد تفاعلات للتعديل
 
       copyScheduleBtn?.addEventListener('click', async () => {
-        const lines = tasks.map(t => `${t.subjectName || t.subjectId} - ${t.minutes || 0}د - صفحات:${t.pages || 0} - ${t.status === 'completed' ? 'مكتمل' : 'غير مكتمل'}`);
+        const lines = allTasks.map(t => {
+          const isLate = t.originalDateId && t.originalDateId < dateId && t.status !== 'completed';
+          const status = t.status === 'completed' ? 'مكتمل' : (isLate ? 'متأخر' : 'غير مكتمل');
+          return `${t.subjectName || t.subjectId} - ${t.minutes || 0}د - صفحات:${t.pages || 0} - ${status}`;
+        });
         await copyText(lines.join('\n'));
       }, { once: true });
     }
@@ -669,9 +817,74 @@
       }, { once: true });
     }
 
-    // Initialize
+    // دالة عرض الوقت المباشر للجلسة النشطة
+    function showLiveTimer() {
+      const sessionData = localStorage.getItem('pomodoroSession');
+      if (!sessionData) {
+        // إزالة عرض الوقت إن لم تكن هناك جلسة
+        const existingTimer = document.getElementById('liveTimerDisplay');
+        if (existingTimer) {
+          existingTimer.remove();
+        }
+        return;
+      }
+      
+      const session = JSON.parse(sessionData);
+      const elapsed = (Date.now() - session.startTime) / 1000;
+      const totalStudyTime = session.studyTime * 60;
+      const breakTime = session.breakTime * 60;
+      
+      let currentTime, isBreakTime, phase;
+      
+      if (elapsed < totalStudyTime) {
+        // فترة المراجعة
+        currentTime = Math.max(0, totalStudyTime - elapsed);
+        isBreakTime = false;
+        phase = 'مراجعة';
+      } else if (elapsed < totalStudyTime + breakTime) {
+        // فترة الراحة
+        currentTime = Math.max(0, totalStudyTime + breakTime - elapsed);
+        isBreakTime = true;
+        phase = 'راحة';
+      } else {
+        // انتهت الجلسة
+        localStorage.removeItem('pomodoroSession');
+        showLiveTimer(); // استدعاء مرة أخرى لإزالة العرض
+        return;
+      }
+      
+      // إنشاء أو تحديث عرض الوقت
+      let timerDisplay = document.getElementById('liveTimerDisplay');
+      if (!timerDisplay) {
+        timerDisplay = document.createElement('div');
+        timerDisplay.id = 'liveTimerDisplay';
+        timerDisplay.className = 'live-timer-display';
+        document.body.appendChild(timerDisplay);
+      }
+      
+      // تحديث الفئة حسب النوع
+      timerDisplay.className = `live-timer-display ${isBreakTime ? 'break-mode' : ''}`;
+      
+      // تنسيق الوقت
+      const minutes = Math.floor(currentTime / 60);
+      const seconds = Math.floor(currentTime % 60);
+      const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      
+      // تحديث المحتوى (للعرض فقط)
+      timerDisplay.innerHTML = `
+        <div class="timer-phase">${isBreakTime ? '☕ استراحة' : '📚 جاري المراجعة'}</div>
+        <div class="timer-time">${timeStr}</div>
+        <div class="timer-task">${session.taskName}</div>
+      `;
+    }
+    
+    // تحديث الوقت كل ثانية
+    setInterval(showLiveTimer, 1000);
+
+    // Initialize (صفحة العرض فقط)
     loadAndRender();
     renderAchievements();
+    showLiveTimer(); // عرض الوقت عند التحميل
   </script>
 </body>
 </html>
